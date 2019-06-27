@@ -5,6 +5,11 @@
 #pragma mark - State
 
 @interface CsZBar ()
+    {
+        UIView *readLineView;
+        float finderWidth;
+        float finderHeigh;
+    }
 @property bool scanInProgress;
 @property NSString *scanCallbackId;
 @property AlmaZBarReaderViewController *scanReader;
@@ -72,14 +77,20 @@
         }
 
         // Hack to hide the bottom bar's Info button... originally based on http://stackoverflow.com/a/16353530
-	NSInteger infoButtonIndex;
-        if ([[[UIDevice currentDevice] systemVersion] compare:@"10.0" options:NSNumericSearch] != NSOrderedAscending) {
-            infoButtonIndex = 1;
-        } else {
-            infoButtonIndex = 3;
-        }
-        UIView *infoButton = [[[[[self.scanReader.view.subviews objectAtIndex:2] subviews] objectAtIndex:0] subviews] objectAtIndex:infoButtonIndex];
-        [infoButton setHidden:YES];
+//    NSInteger infoButtonIndex;
+//        if ([[[UIDevice currentDevice] systemVersion] compare:@"10.0" options:NSNumericSearch] != NSOrderedAscending) {
+//            infoButtonIndex = 1;
+//        } else {
+//            infoButtonIndex = 3;
+//        }
+//        UIView *infoButton = [[[[[self.scanReader.view.subviews objectAtIndex:2] subviews] objectAtIndex:0] subviews] objectAtIndex:infoButtonIndex];
+//        [infoButton setHidden:YES];
+        
+        UIToolbar *toolBar=[[[self.scanReader.view.subviews objectAtIndex:2] subviews] objectAtIndex:0];
+        toolBar.items=@[toolBar.items[0],toolBar.items[1]];
+//        CGRect frame =toolBar.frame;
+//        frame.size.height=24.0f;
+//        toolBar.frame=frame;
 
         //UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem]; [button setTitle:@"Press Me" forState:UIControlStateNormal]; [button sizeToFit]; [self.view addSubview:button];
         CGRect screenRect = [[UIScreen mainScreen] bounds];
@@ -88,31 +99,78 @@
         
         BOOL drawSight = [params objectForKey:@"drawSight"] ? [[params objectForKey:@"drawSight"] boolValue] : true;
         UIToolbar *toolbarViewFlash = [[UIToolbar alloc] init];
-        
         //The bar length it depends on the orientation
         toolbarViewFlash.frame = CGRectMake(0.0, 0, (screenWidth > screenHeight ?screenWidth:screenHeight), 44.0);
         toolbarViewFlash.barStyle = UIBarStyleBlackOpaque;
-        UIBarButtonItem *buttonFlash = [[UIBarButtonItem alloc] initWithTitle:@"Flash" style:UIBarButtonItemStyleDone target:self action:@selector(toggleflash)];
+        UIBarButtonItem *buttonFlash = [[UIBarButtonItem alloc] initWithTitle:@"闪光灯" style:UIBarButtonItemStyleDone target:self action:@selector(toggleflash)];
         
         NSArray *buttons = [NSArray arrayWithObjects: buttonFlash, nil];
         [toolbarViewFlash setItems:buttons animated:NO];
         [self.scanReader.view addSubview:toolbarViewFlash];
 
         if (drawSight) {
-            CGFloat dim = screenWidth < screenHeight ? screenWidth / 1.1 : screenHeight / 1.1;
-            UIView *polygonView = [[UIView alloc] initWithFrame: CGRectMake  ( (screenWidth/2) - (dim/2), (screenHeight/2) - (dim/2), dim, dim)];
-            
-            UIView *lineView = [[UIView alloc] initWithFrame:CGRectMake(0,dim / 2, dim, 1)];
-            lineView.backgroundColor = [UIColor redColor];
-            [polygonView addSubview:lineView];
+            finderWidth=200.0;
+            finderHeigh=200.0;
+//            CGFloat dim = screenWidth < screenHeight ? screenWidth / 1.1 : screenHeight / 1.1;
+//            UIView *polygonView = [[UIView alloc] initWithFrame: CGRectMake  ( (screenWidth/2) - (dim/2), (screenHeight/2) - (dim/2), dim, dim)];
+//
+//            UIView *lineView = [[UIView alloc] initWithFrame:CGRectMake(0,dim / 2, dim, 1)];
+//            lineView.backgroundColor = [UIColor redColor];
+//            [polygonView addSubview:lineView];
 
-            self.scanReader.cameraOverlayView = polygonView;
+            //self.scanReader.cameraOverlayView = polygonView;
+            
+            UIView *finderView = [[UIView alloc] initWithFrame: CGRectMake  ( 0,44, screenWidth, screenHeight-98)];
+            
+            CGRect alphaRect= CGRectMake(screenWidth/2-finderHeigh/2, (screenHeight-98)/2-finderHeigh/2-22, finderWidth, finderHeigh);
+            CGFloat radius=0;
+            
+            CAShapeLayer *maskLayer=[CAShapeLayer layer];
+            maskLayer.frame=finderView.bounds;
+            maskLayer.fillColor=[[UIColor blackColor] colorWithAlphaComponent:0.8].CGColor;
+            
+            UIBezierPath *beizierPath=[UIBezierPath bezierPathWithRect:finderView.bounds];
+            [beizierPath appendPath: [[UIBezierPath bezierPathWithRoundedRect:alphaRect cornerRadius:radius] bezierPathByReversingPath]];
+            maskLayer.path=beizierPath.CGPath;
+            [finderView.layer insertSublayer:maskLayer atIndex:0];
+            
+            self.scanReader.cameraOverlayView=finderView;
+            
+            float scanScop_x=(self.scanReader.readerView.bounds.size.width/2-alphaRect.size.width/2)/self.scanReader.readerView.bounds.size.width;
+            float scanScop_y=(self.scanReader.readerView.bounds.size.height/2-alphaRect.size.height/2)/self.scanReader.readerView.bounds.size.height;
+            float scanScop_width=alphaRect.size.width/self.scanReader.readerView.bounds.size.width;
+            float scanScop_height=alphaRect.size.height/self.scanReader.readerView.bounds.size.height;
+            self.scanReader.scanCrop=CGRectMake(scanScop_x, scanScop_y, scanScop_width, scanScop_height);
+            
+            [self loopDrawLine];
+            
         }
+        
 
         [self.viewController presentViewController:self.scanReader animated:YES completion:nil];
     }
 }
 
+-(void)loopDrawLine{
+    if(readLineView){
+        [readLineView removeFromSuperview];
+    }
+    
+    CGRect screenRect = [[UIScreen mainScreen] bounds];
+    CGFloat screenWidth = screenRect.size.width;
+    CGFloat screenHeight = screenRect.size.height;
+    
+    readLineView=[[UIView alloc] initWithFrame:CGRectMake(screenWidth/2-finderWidth/2,  (screenHeight-98)/2-finderHeigh/2-22, finderWidth, 2)];
+    readLineView.backgroundColor=[UIColor greenColor];
+    [UIView animateWithDuration:3.0 delay:0.0 options:UIViewAnimationOptionCurveLinear animations:^{
+        self->readLineView.frame=CGRectMake(screenWidth/2-self->finderWidth/2, (screenHeight-98)/2-self->finderHeigh/2- 22+self->finderHeigh, self->finderWidth, 2);
+    } completion:^(BOOL finished) {
+        [self loopDrawLine];
+    }];
+    [self.scanReader.cameraOverlayView addSubview:readLineView];
+}
+    
+    
 - (void)toggleflash {
     AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     
