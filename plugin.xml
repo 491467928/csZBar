@@ -48,6 +48,7 @@
         <source-file src="android/ZBarcodeFormat.java" target-dir="src/org/cloudsky/cordovaPlugins" />
         <source-file src="android/ZBar.java" target-dir="src/org/cloudsky/cordovaPlugins" />
         <source-file src="android/ZBarScannerActivity.java" target-dir="src/org/cloudsky/cordovaPlugins" />
+        <source-file src="android/ScanFinderSurfaceView.java" target-dir="src/org/cloudsky/cordovaPlugins" />
         <source-file src="android/libs/zbar.jar" target-dir="libs" />
         <source-file src="android/libs/armeabi/libiconv.so" target-dir="libs/armeabi" />
         <source-file src="android/libs/armeabi/libzbarjni.so" target-dir="libs/armeabi" />
