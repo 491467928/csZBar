@@ -571,7 +571,7 @@ public class ZBarScannerActivity extends Activity
 				}
 
 				camera.setPreviewDisplay(holder);
-				camera.setOneShotPreviewCallback(previewCb);
+				camera.setPreviewCallback(previewCb);
 				camera.startPreview();
 
 				if (android.os.Build.VERSION.SDK_INT >= 14) {
