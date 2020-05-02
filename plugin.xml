@@ -81,7 +81,7 @@
 
         <!-- Declare Camera Usage for iOS10+ -->
         <config-file target="*-Info.plist" parent="NSCameraUsageDescription">
-            <string>For Barcode Scanning</string>
+            <string>App需要您的同意，才能使用摄像头用于扫码或拍照</string>
         </config-file>
 
         <framework src="AVFoundation.framework" />
